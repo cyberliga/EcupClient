@@ -9,6 +9,7 @@ using Hearthstone_Deck_Tracker.Enums;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.Hearthstone.Entities;
 using Hearthstone_Deck_Tracker.Live.Data;
+using BobsBuddyState = Hearthstone_Deck_Tracker.Live.Data.BobsBuddyState;
 
 namespace Hearthstone_Deck_Tracker.Live
 {
@@ -21,6 +22,7 @@ namespace Hearthstone_Deck_Tracker.Live
 		private BoardState? _currentBoardState;
 		private DateTime _currentBoardStateTime = DateTime.MinValue;
 		private bool _invokedGameStart;
+		private BobsBuddyState? _currentBobsBuddyState;
 		public event Action<BoardState>? OnNewBoardState;
 		public event Action<GameStart>? OnGameStart;
 
@@ -29,6 +31,7 @@ namespace Hearthstone_Deck_Tracker.Live
 			_update = false;
 			_currentBoardState = null;
 			_invokedGameStart = false;
+			_currentBobsBuddyState = null;
 		}
 
 		public async void Start()
@@ -41,6 +44,18 @@ namespace Hearthstone_Deck_Tracker.Live
 			{
 				var boardState = GetBoardState();
 				var delta = (DateTime.Now - _currentBoardStateTime).TotalMilliseconds;
+				//Наш код
+				var emptyState = new BobsBuddyState() { SimulationState = TwitchSimulationState.InCombat };
+				var buddyBoardState = boardState?.BobsBuddyOutput;
+				if(buddyBoardState != null && !buddyBoardState.Equals(emptyState) && !buddyBoardState.Equals(_currentBobsBuddyState))
+				{
+					//Отправляем инфу на сервер добавляя чувствительную информацию об игроке как в плагине
+
+					// Все данные лежат в buddyBoardState и их отправить на бэк
+					_currentBobsBuddyState = buddyBoardState;
+				}
+				//Конец нашего кода
+				//
 				var forceInvoke = delta > RepeatDelay && boardState != null && _currentBoardState != null;
 				if(forceInvoke || (!boardState?.Equals(_currentBoardState) ?? false))
 				{
